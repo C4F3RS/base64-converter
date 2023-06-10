@@ -127,11 +127,11 @@ class _AppState extends State<App> {
 
   Widget get toBase64 => ElevatedButton(
       onPressed: isProgress ? null : toBase64Progress,
-      child: const Text("to base64"));
+      child: const Text("Encode to base64"));
 
   Widget get fromBase64 => ElevatedButton(
       onPressed: isProgress ? null : fromBase64Progress,
-      child: const Text("from base64"));
+      child: const Text("Decode to base64"));
 
   @override
   Widget build(BuildContext context) {
