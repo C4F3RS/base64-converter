@@ -3,10 +3,11 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:window_manager/window_manager.dart';
 
-setScreenSize() async {
+setWindowProperties() async {
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     Size windowsSize = const Size(400, 400);
     await windowManager.ensureInitialized();
@@ -34,7 +35,7 @@ requestStoragePermission() async {
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
-  await setScreenSize();
+  await setWindowProperties();
   await requestStoragePermission();
   runApp(MaterialApp(
       title: "base64 converter",
@@ -72,7 +73,7 @@ class _AppState extends State<App> {
                     child: const Text("ok"))
               ]));
 
-  toBase64Progress() async {
+  encodeProgress() async {
     FilePickerResult? result =
         await FilePicker.platform.pickFiles(allowMultiple: true);
     if (result != null) {
@@ -83,10 +84,11 @@ class _AppState extends State<App> {
       });
       try {
         for (var file in result.files) {
-          await File("${file.path}.base64.txt").create();
-          await File("${file.path}.base64.txt").writeAsString(
+          final encodedFileNamePath = path.join(File(file.path!).parent.path,
+              base64Encode(utf8.encode(file.name)));
+          await File(encodedFileNamePath).create();
+          await File(encodedFileNamePath).writeAsString(
               base64Encode(await File(file.path!).readAsBytes()));
-          log("yazma bitti ${DateTime.now()}");
           await File(file.path!).delete();
         }
       } on FileSystemException catch (_) {
@@ -99,7 +101,7 @@ class _AppState extends State<App> {
     }
   }
 
-  fromBase64Progress() async {
+  decodeProgress() async {
     FilePickerResult? result =
         await FilePicker.platform.pickFiles(allowMultiple: true);
     if (result != null) {
@@ -110,8 +112,10 @@ class _AppState extends State<App> {
       });
       try {
         for (var file in result.files) {
-          await File(file.path!.replaceFirst(".base64.txt", "")).create();
-          await File(file.path!.replaceFirst(".base64.txt", "")).writeAsBytes(
+          final decodedFileNamePath = path.join(File(file.path!).parent.path,
+              utf8.decode(base64Decode(file.name)));
+          await File(decodedFileNamePath).create();
+          await File(decodedFileNamePath).writeAsBytes(
               base64Decode(await File(file.path!).readAsString()));
           await File(file.path!).delete();
         }
@@ -126,11 +130,11 @@ class _AppState extends State<App> {
   }
 
   Widget get toBase64 => ElevatedButton(
-      onPressed: isProgress ? null : toBase64Progress,
+      onPressed: isProgress ? null : encodeProgress,
       child: const Text("Encode to base64"));
 
   Widget get fromBase64 => ElevatedButton(
-      onPressed: isProgress ? null : fromBase64Progress,
+      onPressed: isProgress ? null : decodeProgress,
       child: const Text("Decode to base64"));
 
   @override
